@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { getFinancialBreakdown, formatCurrency } from '../lib/calculations';
-import { recognizeLicensePlate, recognizePassportName } from '../lib/ocr';
+import { recognizePassportName } from '../lib/ocr';
 import { downloadReceipt } from '../lib/pdfReceipt';
 import { sendRentalToMake } from '../lib/webhooks';
 import ImageCapture from './ImageCapture';
+import QrScanner from './QrScanner';
 import FinancialSummary from './FinancialSummary';
 import type { Category, RentalFormData, Rental, FinancialBreakdown } from '../types';
 import { Car, User, Building2, Hash, FileText, Save, Download } from 'lucide-react';
@@ -28,8 +29,8 @@ export default function RentalForm() {
         numDays: 1,
     });
 
-    const [platePreview, setPlatePreview] = useState<string | undefined>();
     const [passportPreview, setPassportPreview] = useState<string | undefined>();
+    const [scannedQrData, setScannedQrData] = useState<string | null>(null);
 
     // Fetch categories on mount
     useEffect(() => {
@@ -71,21 +72,20 @@ export default function RentalForm() {
         setFormData((prev) => ({ ...prev, [field]: value }));
     };
 
-    // Handle license plate image capture + OCR
-    const handlePlateCapture = useCallback(async (file: File) => {
-        updateField('licensePlateImage', file);
-        setPlatePreview(URL.createObjectURL(file));
-        setOcrProcessing('plate');
-
+    // Handle QR code parse
+    const handleQrScan = useCallback((text: string) => {
         try {
-            const plateText = await recognizeLicensePlate(file);
-            if (plateText) {
-                setFormData((prev) => ({ ...prev, licensePlate: plateText }));
-            }
-        } catch (err) {
-            console.error('Plate OCR error:', err);
-        } finally {
-            setOcrProcessing(null);
+            // Attempt to parse JSON e.g. {"licensePlate":"123","categoryId":"abc"}
+            const data = JSON.parse(text);
+            if (data.licensePlate) updateField('licensePlate', data.licensePlate);
+            if (data.categoryId) updateField('categoryId', data.categoryId);
+            setScannedQrData(text);
+            showToast('success', 'Vehicle QR Code scanned successfully');
+        } catch {
+            // Fallback: assume the QR text is just the license plate
+            updateField('licensePlate', text);
+            setScannedQrData(text);
+            showToast('success', 'Vehicle QR Code scanned successfully');
         }
     }, []);
 
@@ -140,20 +140,15 @@ export default function RentalForm() {
 
         setLoading(true);
         try {
-            // Upload images if present
-            let licensePlateImageUrl: string | null = null;
+            // Upload passport image if present
             let passportImageUrl: string | null = null;
 
-            if (formData.licensePlateImage) {
-                licensePlateImageUrl = await uploadImage(formData.licensePlateImage, 'plates');
-            }
             if (formData.passportImage) {
                 passportImageUrl = await uploadImage(formData.passportImage, 'passports');
             }
 
             const rentalData: Omit<Rental, 'id' | 'created_at'> = {
                 license_plate: formData.licensePlate,
-                license_plate_image_url: licensePlateImageUrl || undefined,
                 passport_image_url: passportImageUrl || undefined,
                 customer_name: formData.customerName || undefined,
                 hotel_name: formData.hotelName || undefined,
@@ -209,7 +204,7 @@ export default function RentalForm() {
             pricePerDay: 0,
             numDays: 1,
         });
-        setPlatePreview(undefined);
+        setScannedQrData(null);
         setPassportPreview(undefined);
         setSavedRental(null);
     };
@@ -267,18 +262,19 @@ export default function RentalForm() {
                     </div>
 
                     <div className="form-group">
-                        <label className="form-label">License Plate Photo</label>
-                        <ImageCapture
-                            label="Capture License Plate"
-                            onImageCaptured={handlePlateCapture}
-                            onClear={() => {
-                                setPlatePreview(undefined);
-                                updateField('licensePlateImage', null);
-                            }}
-                            processing={ocrProcessing === 'plate'}
-                            processingText="Reading license plate..."
-                            previewUrl={platePreview}
-                        />
+                        <label className="form-label">Vehicle QR Code</label>
+                        {scannedQrData ? (
+                            <div className="flex justify-between items-center p-md bg-input rounded-md border border-success">
+                                <span className="text-success font-semibold flex items-center gap-sm">
+                                    <Car size={16} /> Data Extracted Succesfully
+                                </span>
+                                <button type="button" className="btn btn--secondary btn--sm" onClick={() => setScannedQrData(null)}>
+                                    Rescan
+                                </button>
+                            </div>
+                        ) : (
+                            <QrScanner onScan={handleQrScan} />
+                        )}
                     </div>
 
                     <div className="form-group">

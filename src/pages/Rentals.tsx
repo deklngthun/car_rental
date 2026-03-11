@@ -3,13 +3,17 @@ import { supabase } from '../lib/supabaseClient';
 import { formatCurrency } from '../lib/calculations';
 import { downloadReceipt } from '../lib/pdfReceipt';
 import type { Rental } from '../types';
-import { Car, Download, Search, Calendar } from 'lucide-react';
+import { Car, Download, Search, Calendar, CheckCircle, AlertTriangle } from 'lucide-react';
 
 export default function Rentals() {
     const [rentals, setRentals] = useState<Rental[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [selectedRental, setSelectedRental] = useState<Rental | null>(null);
+    const [isReturning, setIsReturning] = useState(false);
+    const [returnKm, setReturnKm] = useState<string>('');
+    const [returnDamages, setReturnDamages] = useState<string>('');
+    const [updating, setUpdating] = useState(false);
 
     useEffect(() => {
         async function fetchRentals() {
@@ -34,17 +38,94 @@ export default function Rentals() {
             (r.category_name && r.category_name.toLowerCase().includes(search.toLowerCase()))
     );
 
+    const handleReturnSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!selectedRental || !selectedRental.id) return;
+        
+        setUpdating(true);
+        const { data, error } = await supabase
+            .from('rentals')
+            .update({
+                status: 'completed',
+                return_km: parseInt(returnKm) || 0,
+                return_damages: returnDamages,
+                returned_at: new Date().toISOString(),
+            })
+            .eq('id', selectedRental.id)
+            .select()
+            .single();
+
+        setUpdating(false);
+
+        if (data && !error) {
+            const updated = data as Rental;
+            // Update local list
+            setRentals((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+            setSelectedRental(updated);
+            setIsReturning(false);
+        } else {
+            alert('Failed to process vehicle return.');
+        }
+    };
+
     if (selectedRental) {
         return (
             <div className="animate-fade-in">
                 <button
                     className="btn btn--ghost mb-md"
-                    onClick={() => setSelectedRental(null)}
+                    onClick={() => {
+                        if (isReturning) {
+                            setIsReturning(false);
+                        } else {
+                            setSelectedRental(null);
+                        }
+                    }}
                 >
-                    ← Back to list
+                    {isReturning ? '← Cancel Return' : '← Back to list'}
                 </button>
 
-                <div className="card card--elevated mb-md">
+                {isReturning ? (
+                    <div className="card card--elevated mb-md animate-fade-in">
+                        <div className="card__title">
+                            <CheckCircle size={18} className="text-success" />
+                            Return Vehicle — {selectedRental.license_plate}
+                        </div>
+                        <form onSubmit={handleReturnSubmit}>
+                            <div className="form-group">
+                                <label className="form-label" htmlFor="returnKm">Kilometers Driven</label>
+                                <input
+                                    id="returnKm"
+                                    type="number"
+                                    min="0"
+                                    required
+                                    className="form-input"
+                                    placeholder="e.g. 150"
+                                    value={returnKm}
+                                    onChange={(e) => setReturnKm(e.target.value)}
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label className="form-label" htmlFor="returnDamages">Damages & Notes (Optional)</label>
+                                <textarea
+                                    id="returnDamages"
+                                    className="form-input"
+                                    rows={3}
+                                    placeholder="Any scratches, dents, or notes..."
+                                    value={returnDamages}
+                                    onChange={(e) => setReturnDamages(e.target.value)}
+                                />
+                            </div>
+                            <button
+                                type="submit"
+                                disabled={updating || !returnKm}
+                                className="btn btn--primary btn--full mt-md"
+                            >
+                                {updating ? 'Saving...' : 'Confirm Return'}
+                            </button>
+                        </form>
+                    </div>
+                ) : (
+                    <div className="card card--elevated mb-md animate-fade-in">
                     <div className="card__title">
                         <Car size={18} className="card__title-icon" />
                         {selectedRental.license_plate}
@@ -64,7 +145,6 @@ export default function Rentals() {
                             {selectedRental.hotel_name || 'N/A'} / {selectedRental.room_number || 'N/A'}
                         </span>
                     </div>
-
                     <div className="section-divider">Financial</div>
 
                     <div className="financial-summary__row">
@@ -95,7 +175,22 @@ export default function Rentals() {
                         <Download size={18} />
                         Download Receipt
                     </button>
+
+                    {(!selectedRental.status || selectedRental.status === 'active') && (
+                        <button
+                            className="btn btn--secondary btn--full mt-md"
+                            onClick={() => {
+                                setReturnKm('');
+                                setReturnDamages('');
+                                setIsReturning(true);
+                            }}
+                        >
+                            <AlertTriangle size={18} />
+                            Process Vehicle Return
+                        </button>
+                    )}
                 </div>
+                )}
             </div>
         );
     }
@@ -167,6 +262,9 @@ export default function Rentals() {
                                     {rental.category_name || 'N/A'}
                                     {rental.customer_name ? ` · ${rental.customer_name}` : ''}
                                 </div>
+                                {rental.status === 'completed' && (
+                                    <div className="badge badge--success mt-xs" style={{ marginTop: '4px' }}>Completed</div>
+                                )}
                             </div>
                             <div className="rental-item__total">{formatCurrency(rental.total)}</div>
                         </div>

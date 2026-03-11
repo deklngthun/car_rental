@@ -36,8 +36,18 @@ CREATE TABLE IF NOT EXISTS rentals (
   vat_amount NUMERIC(10,2) NOT NULL DEFAULT 0,
   total NUMERIC(10,2) NOT NULL,
   receipt_url TEXT,
+  status TEXT DEFAULT 'active',
+  return_km INTEGER,
+  return_damages TEXT,
+  returned_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT now()
 );
+
+-- Note: Run these migrations if updating an existing schema:
+-- ALTER TABLE rentals ADD COLUMN status TEXT DEFAULT 'active';
+-- ALTER TABLE rentals ADD COLUMN return_km INTEGER;
+-- ALTER TABLE rentals ADD COLUMN return_damages TEXT;
+-- ALTER TABLE rentals ADD COLUMN returned_at TIMESTAMPTZ;
 
 -- 3. Row Level Security
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;

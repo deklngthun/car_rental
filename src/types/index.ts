@@ -26,7 +26,16 @@ export interface Rental {
   vat_amount: number;
   total: number;
   receipt_url?: string;
+  status?: 'active' | 'completed';
+  return_km?: number;
+  return_damages?: string;
+  returned_at?: string;
   created_at?: string;
+}
+
+export interface ReturnFormData {
+  returnKm: number;
+  returnDamages: string;
 }
 
 export interface FinancialBreakdown {

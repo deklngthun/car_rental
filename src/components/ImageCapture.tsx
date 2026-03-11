@@ -19,6 +19,7 @@ export default function ImageCapture({
     previewUrl,
 }: ImageCaptureProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const galleryInputRef = useRef<HTMLInputElement>(null);
     const [dragOver, setDragOver] = useState(false);
 
     const handleFileSelect = useCallback(
@@ -62,7 +63,7 @@ export default function ImageCapture({
                 )}
 
                 {!processing && (
-                    <button className="image-capture__remove" onClick={onClear} title="Remove image">
+                    <button type="button" className="image-capture__remove" onClick={onClear} title="Remove image">
                         <X size={14} />
                     </button>
                 )}
@@ -95,14 +96,34 @@ export default function ImageCapture({
             </div>
             <div className="image-capture__text">{label}</div>
             <div className="image-capture__text" style={{ marginTop: 4, fontSize: '0.7rem' }}>
-                <Upload size={12} style={{ display: 'inline', verticalAlign: 'middle' }} />{' '}
-                Tap to capture or upload
+                Tap to capture with Camera
             </div>
+
+            <div style={{ marginTop: 16 }}>
+                <button
+                    type="button"
+                    className="btn btn--secondary btn--sm"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        galleryInputRef.current?.click();
+                    }}
+                >
+                    <Upload size={14} /> Gallery
+                </button>
+            </div>
+
             <input
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
                 capture="environment"
+                onChange={handleInputChange}
+                style={{ display: 'none' }}
+            />
+            <input
+                ref={galleryInputRef}
+                type="file"
+                accept="image/*"
                 onChange={handleInputChange}
                 style={{ display: 'none' }}
             />
