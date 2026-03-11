@@ -5,6 +5,7 @@ import Schedule from './pages/Schedule';
 import NewRental from './pages/NewRental';
 import Rentals from './pages/Rentals';
 import Reports from './pages/Reports';
+import TestQRs from './pages/TestQRs';
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
           <Route path="/new" element={<NewRental />} />
           <Route path="/rentals" element={<Rentals />} />
           <Route path="/reports" element={<Reports />} />
+          <Route path="/test-qrs" element={<TestQRs />} />
         </Routes>
       </Layout>
     </BrowserRouter>

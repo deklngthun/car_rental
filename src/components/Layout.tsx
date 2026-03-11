@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { PlusCircle, List, BarChart3, Car, Home, Calendar } from 'lucide-react';
+import { PlusCircle, List, BarChart3, Car, Home, Calendar, QrCode } from 'lucide-react';
 
 interface LayoutProps {
     children: React.ReactNode;
@@ -79,6 +79,15 @@ export default function Layout({ children }: LayoutProps) {
                     >
                         <BarChart3 size={22} />
                         <span>Reports</span>
+                    </NavLink>
+                    <NavLink
+                        to="/test-qrs"
+                        className={({ isActive }) =>
+                            `bottom-nav__item ${isActive ? 'bottom-nav__item--active' : ''}`
+                        }
+                    >
+                        <QrCode size={22} />
+                        <span>Test QRs</span>
                     </NavLink>
                 </div>
             </nav>

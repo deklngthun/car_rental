@@ -9,6 +9,14 @@ export interface Category {
   created_at: string;
 }
 
+export interface Vehicle {
+  id: string;
+  license_plate: string;
+  make_model: string;
+  category_id: string;
+  created_at?: string;
+}
+
 export interface Rental {
   id?: string;
   license_plate: string;

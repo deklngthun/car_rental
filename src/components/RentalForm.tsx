@@ -72,20 +72,43 @@ export default function RentalForm() {
         setFormData((prev) => ({ ...prev, [field]: value }));
     };
 
-    // Handle QR code parse
-    const handleQrScan = useCallback((text: string) => {
+    // Handle QR code parse and vehicle query
+    const handleQrScan = useCallback(async (text: string) => {
         try {
-            // Attempt to parse JSON e.g. {"licensePlate":"123","categoryId":"abc"}
-            const data = JSON.parse(text);
-            if (data.licensePlate) updateField('licensePlate', data.licensePlate);
-            if (data.categoryId) updateField('categoryId', data.categoryId);
-            setScannedQrData(text);
-            showToast('success', 'Vehicle QR Code scanned successfully');
-        } catch {
-            // Fallback: assume the QR text is just the license plate
-            updateField('licensePlate', text);
-            setScannedQrData(text);
-            showToast('success', 'Vehicle QR Code scanned successfully');
+            let licensePlate = text;
+            try {
+                // If it's legacy JSON mapping format
+                const data = JSON.parse(text);
+                if (data.licensePlate) licensePlate = data.licensePlate;
+            } catch {
+                // Fallback: it's a raw string, we'll trim it
+                licensePlate = text.trim();
+            }
+
+            // Instantly query the vehicles database layer
+            const { data: vehicleData, error } = await supabase
+                .from('vehicles')
+                .select('*')
+                .eq('license_plate', licensePlate)
+                .single();
+
+            if (vehicleData && !error) {
+                setFormData(prev => ({
+                    ...prev,
+                    licensePlate: vehicleData.license_plate,
+                    categoryId: vehicleData.category_id
+                }));
+                setScannedQrData(text);
+                showToast('success', `Vehicle Found: ${vehicleData.make_model}`);
+            } else {
+                // If the query failed, fallback to manual category selection with the plate string
+                setFormData(prev => ({ ...prev, licensePlate }));
+                setScannedQrData(text);
+                showToast('error', 'Unregistered Vehicle. Please fill manually.');
+            }
+        } catch (err) {
+            console.error('QR Scan error:', err);
+            showToast('error', 'Failed to process QR code');
         }
     }, []);
 
