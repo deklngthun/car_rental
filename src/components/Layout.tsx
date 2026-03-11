@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { PlusCircle, List, BarChart3, Car } from 'lucide-react';
+import { PlusCircle, List, BarChart3, Car, Home, Calendar } from 'lucide-react';
 
 interface LayoutProps {
     children: React.ReactNode;
@@ -36,8 +36,26 @@ export default function Layout({ children }: LayoutProps) {
                     }
                     end
                 >
+                    <Home size={22} />
+                    <span>Home</span>
+                </NavLink>
+                <NavLink
+                    to="/schedule"
+                    className={({ isActive }) =>
+                        `bottom-nav__item ${isActive ? 'bottom-nav__item--active' : ''}`
+                    }
+                >
+                    <Calendar size={22} />
+                    <span>Schedule</span>
+                </NavLink>
+                <NavLink
+                    to="/new"
+                    className={({ isActive }) =>
+                        `bottom-nav__item ${isActive ? 'bottom-nav__item--active' : ''}`
+                    }
+                >
                     <PlusCircle size={22} />
-                    <span>New Rental</span>
+                    <span>New</span>
                 </NavLink>
                 <NavLink
                     to="/rentals"
