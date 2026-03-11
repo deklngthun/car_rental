@@ -1,0 +1,43 @@
+{
+    "event": "rental_created",
+    "timestamp": "2026-03-11T06:00:00.000Z",
+    "rental": {
+        "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        "license_plate": "AB 1234 CD",
+        "customer_name": "John Doe",
+        "hotel_name": "Grand Resort",
+        "room_number": "205",
+        "category": "Scooter",
+        "price_per_day": 150000,
+        "num_days": 3,
+        "subtotal": 450000,
+        "vat_rate": 7.0,
+        "vat_amount": 31500,
+        "total": 481500,
+        "created_at": "2026-03-11T06:00:00.000Z"
+    },
+    "daily_summary": {
+        "date": "2026-03-11",
+        "total_rentals": 5,
+        "gross_revenue": 2250000,
+        "total_vat": 157500,
+        "net_revenue": 2407500
+    },
+    "category_breakdown": [
+        {
+            "category": "Scooter",
+            "revenue": 1200000,
+            "count": 3
+        },
+        {
+            "category": "Car",
+            "revenue": 800000,
+            "count": 1
+        },
+        {
+            "category": "Motorbike",
+            "revenue": 250000,
+            "count": 1
+        }
+    ]
+}
